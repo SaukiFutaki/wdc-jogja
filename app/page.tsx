@@ -1,9 +1,16 @@
+import { auth } from "@/auth";
 import Navbar from "@/components/navbar/navbar";
+import { headers } from "next/headers";
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  console.log(session);
   return (
- <div>
-    <Navbar />
- </div>
+    <div>
+      <Navbar />
+    </div>
   );
 }

@@ -12,22 +12,30 @@ import {
       <NavigationMenuList className="gap-6 space-x-0 data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-start">
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-            <Link href="#">Home</Link>
+            <Link href="#">
+                MENU 
+            </Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-            <Link href="#">Blog</Link>
+            <Link href="#">
+                MENU
+            </Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-            <Link href="#">About</Link>
+            <Link href="#">
+                MENU
+            </Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-            <Link href="#">Contact Us</Link>
+            <Link href="#">
+                MENU
+            </Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
       </NavigationMenuList>
