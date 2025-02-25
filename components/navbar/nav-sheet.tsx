@@ -14,13 +14,7 @@ export const NavigationSheet = () => {
         </Button>
       </SheetTrigger>
       <SheetContent>
-       <Image
-            src="/logo.svg"
-            alt="Logo"
-            width={200}
-            height={40}
-          
-       />
+        <Image src="/logo.svg" alt="Logo" width={200} height={40} />
         <NavMenu orientation="vertical" className="mt-12" />
       </SheetContent>
     </Sheet>
