@@ -1,9 +1,8 @@
 import { Button } from "@/components/ui/button";
-import Logo from "../logo";
-import { NavMenu } from "./nav-menu";
-import { NavigationSheet } from "./nav-sheet";
 import Image from "next/image";
 import ThemeToggleButton from "../theme-button";
+import { NavMenu } from "./nav-menu";
+import { NavigationSheet } from "./nav-sheet";
 export default function Navbar() {
   return (
     <div className="min-h-screen bg-muted">
