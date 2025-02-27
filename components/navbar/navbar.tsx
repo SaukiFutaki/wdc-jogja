@@ -1,17 +1,17 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
-import ThemeToggleButton from "../theme-button";
-import { NavMenu } from "./nav-menu";
-import { NavigationSheet } from "./nav-sheet";
-import { authClient, signIn } from "@/lib/auth-client";
-import { Profile } from "../profile";
 import { Skeleton } from "@/components/ui/skeleton";
+import { authClient, signIn } from "@/lib/auth-client";
+import Image from "next/image";
+import { Profile } from "../profile";
+import ThemeToggleButton from "../theme-button";
+import RichNavigationMenu from "./nav-rich";
+import { NavigationSheet } from "./nav-sheet";
 
 export default function Navbar() {
   const { data: session, isPending } = authClient.useSession();
-  
+
   return (
     <div className="min-h-screen bg-muted">
       {isPending ? (
@@ -23,7 +23,8 @@ export default function Navbar() {
           <div className="h-full flex items-center justify-between mx-auto px-4">
             <Image src="/logo.svg" alt="Logo" width={200} height={40} />
             {/* Desktop Menu */}
-            <NavMenu className="hidden md:block" />
+            <RichNavigationMenu className="hidden xl:flex"  />
+
             <div className="flex items-center gap-3">
               {session === null ? (
                 <div>
@@ -34,7 +35,10 @@ export default function Navbar() {
                   >
                     Sign In
                   </Button>
-                  <Button className="rounded-full hidden sm:inline-flex cursor-not-allowed" disabled>
+                  <Button
+                    className="rounded-full hidden sm:inline-flex cursor-not-allowed"
+                    disabled
+                  >
                     Sign Up
                   </Button>
                 </div>

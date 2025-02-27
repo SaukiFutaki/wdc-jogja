@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { auth } from "@/auth";
-import Navbar from "@/components/navbar/navbar";
+import ProductForm from "@/components/demo/FormData";
 import { headers } from "next/headers";
 
 export default async function Home() {
@@ -7,10 +8,10 @@ export default async function Home() {
     headers: await headers(),
   });
 
-  console.log(session);
+  
   return (
-    <div>
-      <Navbar />
+    <div className="container  mx-10">
+    
     </div>
   );
 }
