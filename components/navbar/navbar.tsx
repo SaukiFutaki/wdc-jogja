@@ -27,7 +27,7 @@ export default function Navbar() {
 
             <div className="flex items-center gap-3">
               {session === null ? (
-                <div>
+                <div className="flex items-center gap-3">
                   <Button
                     variant="outline"
                     className="hidden sm:inline-flex rounded-full"
