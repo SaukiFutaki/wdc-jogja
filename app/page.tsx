@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { auth } from "@/auth";
 import BarterSection from "@/components/barter/barter-section";
-import ProductForm from "@/components/demo/FormData";
 import ProductSection from "@/components/products/product-section";
 import { Separator } from "@/components/ui/separator";
 import { headers } from "next/headers";
