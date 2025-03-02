@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // ProductPage.tsx (Server Component)
 import ProductActions from "@/components/products/product-action";
 import ProductCard from "@/components/products/product-card";
@@ -202,9 +203,9 @@ export default async function Page({ params }: IPageProps) {
         <div className="mt-16">
           <h2 className="text-2xl font-bold mb-8">YOU MIGHT ALSO LIKE</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {relatedProducts.map((product, index) => (
+            {/* {relatedProducts.map((product, index) => (
               <ProductCard key={index} {...product} />
-            ))}
+            ))} */}
           </div>
         </div>
       </div>
