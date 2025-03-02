@@ -63,7 +63,7 @@ export default function ProductCard({
 
 
   return (
-    <Link href={`/product/${title.toLowerCase().replace(/\s+/g, "-")}`}>
+    <Link href={`/products/${title.toLowerCase().replace(/\s+/g, "-")}`}>
       <div className="group">
         <div className="relative bg-gray-100 rounded-lg overflow-hidden">
           {discount && (

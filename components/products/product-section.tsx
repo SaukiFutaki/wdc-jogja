@@ -49,7 +49,7 @@ const demoData: DemoDataProps[] = [
     originalPrice: 150000,
   },
   {
-    image: "/logo.svg",
+    image: "/assests-wdc/gambar/image 9.png",
     title: "T-Shirt With Tape Details",
     price: 150000,
     rating: 5,
@@ -58,7 +58,7 @@ const demoData: DemoDataProps[] = [
     originalPrice: 150000,
   },
   {
-    image: "/logo.svg",
+    image: "/assests-wdc/gambar/image 8.png",
     title: "T-Shirt With Tape Details",
     price: 150000,
     rating: 5,
@@ -67,7 +67,7 @@ const demoData: DemoDataProps[] = [
     originalPrice: 150000,
   },
   {
-    image: "/logo.svg",
+    image: "/assests-wdc/gambar/image 7.png",
     title: "T-Shirt With Tape Details",
     price: 150000,
     rating: 5,
@@ -84,7 +84,7 @@ export default function ProductSection() {
         <h2 className="text-3xl font-bold text-center mb-10">SHOP</h2>
 
         {/* Category Filters */}
-        <div className="flex flex-wrap justify-start gap-2 mb-12">
+        {/* <div className="flex flex-wrap justify-start gap-2 mb-12">
           {["T-Shirt", "Sport", "Pants", "Jeans", "Shirt", "Long Shirt"].map(
             (category) => (
               <button
@@ -95,7 +95,7 @@ export default function ProductSection() {
               </button>
             )
           )}
-        </div>
+        </div> */}
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

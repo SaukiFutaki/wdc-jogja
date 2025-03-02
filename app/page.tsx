@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { auth } from "@/auth";
+import BarterSection from "@/components/barter/barter-section";
 import ProductForm from "@/components/demo/FormData";
 import ProductSection from "@/components/products/product-section";
+import { Separator } from "@/components/ui/separator";
 import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
@@ -51,6 +53,11 @@ export default async function Home() {
         </div>
       </section>
       <ProductSection />
+      <div className="container mx-auto px-4 py-16">
+
+      <Separator />
+      </div>
+      <BarterSection />
     </div>
   );
 }
