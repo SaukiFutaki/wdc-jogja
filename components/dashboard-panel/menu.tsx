@@ -159,6 +159,7 @@ export function Menu({ isOpen }: MenuProps) {
                 <Tooltip delayDuration={100}>
                   <TooltipTrigger>
                     <Switch
+                    disabled
                       id="disable-sidebar"
                       onCheckedChange={(x) => setSettings({ disabled: x })}
                       checked={settings.disabled}

@@ -21,7 +21,6 @@ export function Profile() {
   }
 
   const { user } = session;
-  console.log(user.image);
   const userInitials = user.name
     ? user.name
         .split(" ")

@@ -1,17 +1,13 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { auth } from "@/auth";
+
 import BarterSection from "@/components/barter/barter-section";
 import ProductSection from "@/components/products/product-section";
 import { Separator } from "@/components/ui/separator";
-import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 
 export default async function Home() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
 
+ 
   return (
     <div>
       <section className=" bg-gray-100 px-6">
