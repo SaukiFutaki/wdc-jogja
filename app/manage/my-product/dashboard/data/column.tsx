@@ -22,7 +22,7 @@ import {
 import Image from "next/image";
 import { ActionCell } from "./action-row";
 
-interface Product {
+export interface Product {
   id: string;
   name: string;
   description: string;
