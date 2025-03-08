@@ -11,6 +11,8 @@ export default async function Page() {
       price: item.price || 0,
       category: item.category || '',
       status: item.status || '',
+      quantity: item.quantity || 0,
+      discount: item.discount || 0,
       primaryImageUrl: item.primaryImageUrl || '',
       updatedAt: item.updatedAt.toString()
     })) || []

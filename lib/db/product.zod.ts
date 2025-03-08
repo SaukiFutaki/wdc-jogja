@@ -17,19 +17,24 @@ import * as z from "zod"
 
 
 export const productSchema = z.object({
-  id: z.string(), // Primary key
-  sellerId: z.string().min(1, "Seller ID is required"), // Foreign key to user.id
-  name: z.string().min(2, "Product name must be at least 2 characters"),
+  id: z.string(), // Kunci utama
+  sellerId: z.string().min(1, "ID Penjual wajib diisi"), // Kunci asing ke user.id
+  name: z.string().min(2, "Nama produk harus memiliki minimal 2 karakter"),
   description: z.string().optional(),
-  price: z.number().min(0, "Price must be a positive number").optional(),
-  category: z.string().min(2, "Category name must be at least 2 characters"),
-  condition: z.enum(["new", "used", "rework"]),
-  status: z.enum(["available", "sold", "barter"]).default("available"),
+  price: z.number().min(0, "Harga harus berupa angka positif").optional(),
+  category: z.string().min(2, "Silakan pilih kategori yang valid").optional(),
+  condition: z.enum(["new", "used", "rework"]).optional(),
+  status: z.enum(["available", "sold", "barter"]).default("available").optional(),
   primaryImageUrl: z.string().optional(),
-  sustainabilityRating: z.number().int().min(1, "Sustainability rating must be at least 1").optional(),
+  quantity: z.number().int().min(1, "Jumlah minimal harus 1").optional(),
+  discount: z.number().int().min(0, "Diskon minimal harus 0").optional(),
+  sustainabilityRating: z.number().int().min(1, "Peringkat keberlanjutan minimal harus 1").optional(),
   createdAt: z.date(), // Timestamp
   updatedAt: z.date(), // Timestamp
+  // Penjualan atau barter
+  type: z.enum(["jual", "barter"]).optional(),
 });
+
 
 
 

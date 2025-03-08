@@ -35,7 +35,7 @@ export function Sidebar() {
           variant="link"
           asChild
         >
-          <Link href="/dashboard" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
            
             <Image src="/logo.svg" alt="Logo" width={200} height={40}
               className={cn(

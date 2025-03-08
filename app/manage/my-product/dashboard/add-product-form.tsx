@@ -3,21 +3,21 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
-    Form,
-    FormControl,
-    FormDescription,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -47,12 +47,15 @@ export default function AddProductForm() {
       description: "",
       price: 0,
       category: "",
+      quantity: 1,
+      discount: 0,
       condition: "new",
       status: "available",
       sustainabilityRating: 1,
       primaryImageUrl: "", // This will be set after uploading images
       createdAt: new Date(),
       updatedAt: new Date(),
+      type: "barter",
     },
   });
 
@@ -85,6 +88,9 @@ export default function AddProductForm() {
         });
     });
   }
+
+  const productType = form.watch("type");
+
 
   return (
     <Form {...form}>
@@ -282,46 +288,12 @@ export default function AddProductForm() {
         {/* Right Column - Pricing & Status */}
         <div className="space-y-6">
           <Card className="p-6 bg-card">
-            <h3 className="text-lg font-medium text-white mb-4">Harga</h3>
-            <div className="space-y-4">
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field: { value, onChange, ...field } }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Harga{" "}
-                      <span className="text-sm text-gray-400">
-                        (IDR / unit)
-                      </span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="text"
-                        value={value ? value.toLocaleString("id-ID") : ""}
-                        onChange={(e) => {
-                          const rawValue = e.target.value.replace(/\D/g, ""); // Hapus semua non-angka
-                          onChange(rawValue ? parseInt(rawValue) : 0);
-                        }}
-                        placeholder="Rp."
-                        className="bg-gray-800 border-gray-700"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-white">Tipe Produk</h3>
             </div>
-          </Card>
-
-          <Card className="p-6 bg-card">
-            <h3 className="text-lg font-medium text-white mb-4">
-              Status Produk
-            </h3>
             <FormField
               control={form.control}
-              name="status"
+              name="type"
               render={({ field }) => (
                 <FormItem>
                   <Select
@@ -330,38 +302,152 @@ export default function AddProductForm() {
                   >
                     <FormControl>
                       <SelectTrigger className="bg-gray-800 border-gray-700">
-                        <SelectValue placeholder="Select status" />
+                        <SelectValue placeholder="Pilih tipe produk" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="available">Tersedia</SelectItem>
-                      <SelectItem value="sold">Terjual</SelectItem>
-                      <SelectItem value="barter">Ditukar</SelectItem>
+                      <SelectItem value="jual">Jual</SelectItem>
+                      <SelectItem value="barter">Barter</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormDescription className="text-gray-400">
-                    Pilih status produk
-                  </FormDescription>
-                  <FormMessage />
                 </FormItem>
               )}
             />
           </Card>
+
+          {productType === "jual" && (
+            <>
+              <Card className="p-6 bg-card">
+                <h3 className="text-lg font-medium text-white mb-4">Harga</h3>
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="quantity"
+                    render={({ field: { value, onChange, ...field } }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Jumlah{" "}
+                          <span className="text-sm text-gray-400">
+                            (unit tersedia)
+                          </span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="number"
+                            value={value || ""}
+                            onChange={(e) => {
+                              const rawValue = parseInt(e.target.value) || 0;
+                              onChange(Math.max(0, rawValue));
+                            }}
+                            placeholder="0"
+                            className="bg-gray-800 border-gray-700"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field: { value, onChange, ...field } }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Harga{" "}
+                          <span className="text-sm text-gray-400">
+                            (IDR / unit)
+                          </span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="text"
+                            value={value ? value.toLocaleString("id-ID") : ""}
+                            onChange={(e) => {
+                              const rawValue = e.target.value.replace(/\D/g, ""); // Hapus semua non-angka
+                              onChange(rawValue ? parseInt(rawValue) : 0);
+                            }}
+                            placeholder="Rp."
+                            className="bg-gray-800 border-gray-700"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="discount"
+                    render={({ field: { value, onChange, ...field } }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Diskon{" "}
+                          <span className="text-sm text-gray-400">
+                            (persentase)
+                          </span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="number"
+                            value={value || ""}
+                            onChange={(e) => {
+                              const rawValue = parseInt(e.target.value) || 0;
+                              onChange(Math.min(100, Math.max(0, rawValue))); // Batasi 0 - 100
+                            }}
+                            placeholder="0"
+                            className="bg-gray-800 border-gray-700"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </Card>
+
+              <Card className="p-6 bg-card">
+                <h3 className="text-lg font-medium text-white mb-4">
+                  Status Produk
+                </h3>
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="bg-gray-800 border-gray-700">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="available">Tersedia</SelectItem>
+                          <SelectItem value="sold">
+                            Terjual (Tidak Tersedia)
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription className="text-gray-400">
+                        Pilih status produk
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </Card>
+            </>
+          )}
 
           <Card className="p-6 bg-card ">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium text-white">
                 Kategori Produk
               </h3>
-              {/* <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                className="bg-gray-800"
-                onClick={() => setOpenCategoryDialog(true)}
-              >
-                <Plus className="h-4 w-4 mr-2" /> Add
-              </Button> */}
             </div>
             <FormField
               control={form.control}
@@ -391,20 +477,22 @@ export default function AddProductForm() {
           </Card>
 
           <div className="flex justify-end gap-4">
-            <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={isPending}>
-                {isPending ? <Loader2 className="animate-spin text-center"/> : "Tambah Produk"}
+            <Button
+              type="submit"
+              className="bg-green-600 hover:bg-green-700"
+              disabled={isPending}
+            >
+              {isPending ? (
+                <Loader2 className="animate-spin text-center" />
+              ) : (
+                "Tambah Produk"
+              )}
             </Button>
           </div>
         </div>
       </form>
 
-      {/* Category Dialog */}
-      {/* {openCategoryDialog && (
-        <AddCategoryDialog
-          open={openCategoryDialog}
-          onOpenChange={setOpenCategoryDialog}
-        />
-      )} */}
+    
     </Form>
   );
 }

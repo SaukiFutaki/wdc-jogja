@@ -67,7 +67,7 @@ export const verification = sqliteTable("verification", {
   updatedAt: integer("updated_at", { mode: "timestamp" }),
 });
 
-// Product related tables
+
 export const product = sqliteTable("product", {
   id: text("id").primaryKey(),
   sellerId: text("seller_id").notNull().references(() => user.id),
@@ -75,10 +75,14 @@ export const product = sqliteTable("product", {
   description: text("description"),
   price: real("price"),
   category: text("category"),
+  quantity: integer("quantity").default(1),
+  discount: real("discount").default(0),
   condition: text("condition", { enum: ["new", "used", "rework"] }).notNull(),
   status: text("status", { enum: ["available", "sold", "barter"] }).default("available"),
   primaryImageUrl: text("primary_image_url"), // Jika ingin menyimpan URL gambar utama
   sustainabilityRating: integer("sustainability_rating"),
+  // jual atau barter
+  type: text("type", { enum: ["jual", "barter"] }).default("jual"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });

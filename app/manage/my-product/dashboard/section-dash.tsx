@@ -10,8 +10,10 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ProductList, { Product } from "./product-list";
+
 import AddProductForm from "./add-product-form";
+import { DataTableProduct } from "./data/data-table";
+import { columns, Product } from "./data/column";
 
 export default function SectionDashProd({ data }: { data: Product[] }) {
   return (
@@ -44,7 +46,7 @@ export default function SectionDashProd({ data }: { data: Product[] }) {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="list" className="space-y-4">
-            <ProductList data={data} />
+            <DataTableProduct data={data} columns={columns} />
           </TabsContent>
           <TabsContent value="add">
             <AddProductForm />

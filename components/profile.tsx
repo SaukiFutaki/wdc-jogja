@@ -49,7 +49,7 @@ export function Profile() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-          <Link href="/manage">
+          <Link href="/manage/my-store/dashboard">
         <DropdownMenuItem className="cursor-pointer">
           <User className="h-4 w-4" /> Manage
         </DropdownMenuItem>
