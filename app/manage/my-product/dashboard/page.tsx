@@ -11,6 +11,7 @@ export default async function Page() {
       price: item.price || 0,
       category: item.category || '',
       status: item.status || '',
+      type: item.type || 'jual', // Add default value for type
       quantity: item.quantity || 0,
       discount: item.discount || 0,
       primaryImageUrl: item.primaryImageUrl || '',
