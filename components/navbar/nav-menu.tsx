@@ -13,24 +13,26 @@ export const NavMenu = (props: NavigationMenuProps) => (
     <NavigationMenuList className="gap-6 space-x-0 data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-start">
       <NavigationMenuItem>
         <NavigationMenuLink asChild>
-          <Link href="#">MENU</Link>
+          <Link href="/barter">
+            Barter
+          </Link>
         </NavigationMenuLink>
       </NavigationMenuItem>
       <NavigationMenuItem>
         <NavigationMenuLink asChild>
-          <Link href="#">MENU</Link>
+          <Link href="/rework">
+            Rework
+          </Link>
         </NavigationMenuLink>
       </NavigationMenuItem>
       <NavigationMenuItem>
         <NavigationMenuLink asChild>
-          <Link href="#">MENU</Link>
+          <Link href="/edu">
+            Education
+          </Link>
         </NavigationMenuLink>
       </NavigationMenuItem>
-      <NavigationMenuItem>
-        <NavigationMenuLink asChild>
-          <Link href="#">MENU</Link>
-        </NavigationMenuLink>
-      </NavigationMenuItem>
+     
 
       <NavigationMenuItem className="md:hidden">
         <ThemeSwitch />

@@ -235,16 +235,11 @@ export default function Navbar({
                   <Button
                     variant="outline"
                     className="hidden sm:inline-flex rounded-full"
-                    onClick={() => router.push("/signin")}
+                    onClick={() => router.push("/auth")}
                   >
                     Sign In
                   </Button>
-                  <Button
-                    className="rounded-full hidden sm:inline-flex cursor-not-allowed"
-                    disabled
-                  >
-                    Sign Up
-                  </Button>
+                
                 </div>
               ) : (
                 <div className="hidden sm:flex items-center gap-3">
