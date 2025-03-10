@@ -85,7 +85,7 @@ export const product = sqliteTable("product", {
   primaryImageUrl: text("primary_image_url"), // Jika ingin menyimpan URL gambar utama
   sustainabilityRating: integer("sustainability_rating"),
   // jual atau barter
-  type: text("type", { enum: ["jual", "barter"] }).default("jual"),
+  type: text("type", { enum: ["jual", "barter", "rework"] }).default("jual"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });

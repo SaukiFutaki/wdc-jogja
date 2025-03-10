@@ -143,6 +143,7 @@ export default function AddProductForm() {
                 />
 
                 <FormField
+                
                   control={form.control}
                   name="condition"
                   render={({ field }) => (
@@ -184,7 +185,7 @@ export default function AddProductForm() {
                           onChange={(e) =>
                             onChange(parseInt(e.target.value) || 1)
                           }
-                          className="bg-gray-800 border-gray-700"
+                          className="bg-gray-800 border-gray- hidden"
                         />
                       </FormControl>
                       <FormDescription className="text-gray-400">

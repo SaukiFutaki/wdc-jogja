@@ -673,3 +673,26 @@ async function deleteFromCloudinary(cloudinaryId: string) {
     throw new Error("Failed to delete image from Cloudinary");
   }
 }
+
+
+//condition rework
+export async function getAllProductRework() {
+  try {
+    const products = await db
+      .select()
+      .from(product)
+      .where(eq(product.condition, "rework"))
+      .orderBy(desc(product.createdAt));
+    return {
+      success: true,
+      data: products,
+    };
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return {
+      success: false,
+      message: "Failed to fetch products",
+      error,
+    };
+  }
+}
