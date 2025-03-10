@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
 import { auth } from "@/auth";
@@ -7,6 +8,7 @@ import {
   notification,
   payment,
   product,
+  productImage,
   shipping,
   transaction,
   user,
@@ -21,6 +23,13 @@ import midtransClient from "midtrans-client";
 
 // Initialize Midtrans Snap API client
 const snap = new midtransClient.Snap({
+  isProduction: process.env.NODE_ENV === "production",
+  serverKey: process.env.MIDTRANS_SERVER_KEY,
+  clientKey: process.env.MIDTRANS_CLIENT_KEY,
+});
+
+// Initialize Midtrans Core API client (untuk mendapatkan detail VA)
+const core = new midtransClient.CoreApi({
   isProduction: process.env.NODE_ENV === "production",
   serverKey: process.env.MIDTRANS_SERVER_KEY,
   clientKey: process.env.MIDTRANS_CLIENT_KEY,
@@ -49,11 +58,14 @@ export interface CreateTransactionInput {
     cartTotal: number;
   };
   shippingMethod: string;
-  paymentMethod: string;
+  paymentMethod: string; // credit_card, bank_transfer, e_wallet, cod
+  bankName?: string; // BCA, BNI, Mandiri, etc. (untuk bank_transfer)
+  eWalletType?: string; // GOPAY, OVO, etc. (untuk e_wallet)
   shippingAddress: string;
   shippingCity: string;
   shippingPostalCode: string;
 }
+
 export async function createTransaction(input: CreateTransactionInput) {
   try {
     // Get authenticated user
@@ -70,6 +82,8 @@ export async function createTransaction(input: CreateTransactionInput) {
       cartData,
       shippingMethod,
       paymentMethod,
+      bankName,
+      eWalletType,
       shippingAddress,
       shippingCity,
       shippingPostalCode,
@@ -112,6 +126,14 @@ export async function createTransaction(input: CreateTransactionInput) {
         return total + discountedPrice * item.quantity;
       }, 0);
 
+      const sellerExists = await db.query.user.findFirst({
+        where: eq(user.id, sellerId),
+      });
+      
+      if (!sellerExists) {
+        throw new Error(`Seller with ID ${sellerId} does not exist`);
+      }
+      
       totalAmount += sellerTotal;
 
       // Create transaction record
@@ -122,8 +144,8 @@ export async function createTransaction(input: CreateTransactionInput) {
         sellerId: sellerId,
         productId: items[0].product.id, // For single product transactions
         totalPrice: sellerTotal,
-        paymentStatus: "pending",
-        orderStatus: "processing",
+        paymentStatus: "pending", // Using the appropriate enum value from schema
+        orderStatus: "processing", // Using the appropriate enum value from schema
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -167,7 +189,7 @@ export async function createTransaction(input: CreateTransactionInput) {
         id: nanoid(),
         transactionId: transactionId,
         shippingMethod: shippingMethod,
-        shippingStatus: "preparing",
+        shippingStatus: "preparing", // Using the appropriate enum value from schema
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -178,7 +200,7 @@ export async function createTransaction(input: CreateTransactionInput) {
         userId: sellerId,
         title: "New Order Received",
         message: `You have received a new order worth Rp ${sellerTotal.toLocaleString()}`,
-        type: "transaction",
+        type: "transaction", // Using the appropriate enum value from schema
         linkTo: `/seller/orders/${transactionId}`,
         createdAt: new Date(),
       });
@@ -189,8 +211,25 @@ export async function createTransaction(input: CreateTransactionInput) {
     // Generate unique order ID for Midtrans
     const orderId = `ORDER-${nanoid(10)}`;
 
-    // Create Midtrans transaction parameter
-    const parameter = {
+    // Prepare parameter for Midtrans Snap
+    const parameter: {
+      transaction_details: {
+        order_id: string;
+        gross_amount: number;
+      };
+      customer_details: {
+        first_name: string;
+        email: string;
+        phone: string;
+        shipping_address: {
+          address: string;
+          city: string;
+          postal_code: string;
+        };
+      };
+      item_details: any[];
+      enabled_payments: string[];
+    } = {
       transaction_details: {
         order_id: orderId,
         gross_amount: totalAmount,
@@ -206,33 +245,55 @@ export async function createTransaction(input: CreateTransactionInput) {
         },
       },
       item_details: orderItemDetails,
-      callbacks: {
-        finish: `${process.env.NEXT_PUBLIC_APP_URL}/payment/success?order_id=${orderId}`,
-        error: `${process.env.NEXT_PUBLIC_APP_URL}/payment/error?order_id=${orderId}`,
-        pending: `${process.env.NEXT_PUBLIC_APP_URL}/payment/pending?order_id=${orderId}`,
-      },
+      enabled_payments: [],
     };
 
-    // Create Midtrans Snap token
-    const midtransToken = await snap.createTransaction(parameter);
+    // Set enabled_payments based on paymentMethod - MODIFIED TO EXCLUDE CREDIT CARD
+    if (paymentMethod === "bank_transfer") {
+      parameter.enabled_payments = ["bca_va", "bni_va", "bri_va", "permata_va", "echannel"];
+    } else if (paymentMethod === "e_wallet") {
+      parameter.enabled_payments = ["gopay", "shopeepay"];
+    } else if (paymentMethod === "cod") {
+      parameter.enabled_payments = ["indomaret", "alfamart"];
+    } else {
+      // If not specified, enable all payment methods EXCEPT credit_card
+      parameter.enabled_payments = [
+        "gopay", "shopeepay",
+        "bca_va", "bni_va", "bri_va", "permata_va", "echannel",
+        "indomaret", "alfamart"
+      ];
+    }
+
+    // If specific bank is selected for bank_transfer
+    if (paymentMethod === "bank_transfer" && bankName) {
+      const bankCode = bankName.toLowerCase();
+      if (["bca", "bni", "bri", "permata"].includes(bankCode)) {
+        parameter.enabled_payments = [`${bankCode}_va`];
+      } else if (bankCode === "mandiri") {
+        parameter.enabled_payments = ["echannel"];
+      }
+    }
+
+    // Create Snap transaction token
+    const snapResponse = await snap.createTransaction(parameter);
 
     // Create payment record
     const paymentId = nanoid();
-    // Ensure payment method is a valid type
-    const validPaymentMethod =
-      paymentMethod === "credit_card" ||
-      paymentMethod === "bank_transfer" ||
-      paymentMethod === "e_wallet" ||
-      paymentMethod === "cod"
-        ? paymentMethod
-        : "bank_transfer"; // Default fallback
-
     await db.insert(payment).values({
       id: paymentId,
       transactionId: transactionIds[0], // Link to first transaction if multiple
-      paymentMethod: validPaymentMethod,
+      paymentMethod: paymentMethod as any, // Cast to match schema enum
       paymentStatus: "pending",
       paymentDate: null,
+      // Tambahan field untuk detail pembayaran
+      bankName: bankName || "",
+      vaNumber: "",
+      billKey: "",
+      billerCode: "",
+      paymentCode: "",
+      paymentInstructions: "",
+      midtransOrderId: orderId,
+      midtransTransactionId: "", // Will be filled after payment completion
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -243,7 +304,7 @@ export async function createTransaction(input: CreateTransactionInput) {
       userId: buyerId,
       title: "Order Created",
       message: `Your order has been created. Please complete the payment.`,
-      type: "transaction",
+      type: "transaction", // Using the appropriate enum value from schema
       linkTo: `/orders/${transactionIds[0]}`,
       createdAt: new Date(),
     });
@@ -253,13 +314,14 @@ export async function createTransaction(input: CreateTransactionInput) {
       await db.delete(cart).where(eq(cart.id, item.id));
     }
 
-    // Return the necessary data
+    // Return the necessary data including Snap token
     return {
       success: true,
       transactionIds,
       orderId,
-      midtransToken,
-      redirectUrl: midtransToken.redirect_url,
+      paymentMethod,
+      token: snapResponse.token,
+      redirect_url: snapResponse.redirect_url,
     };
   } catch (error) {
     console.error("Error creating transaction:", error);
@@ -270,285 +332,354 @@ export async function createTransaction(input: CreateTransactionInput) {
     };
   }
 }
+// Handle Midtrans webhook callback
+export async function handleMidtransCallback(req: Request) {
+  try {
+    // Parse webhook notification from Midtrans
+    const body = await req.json();
 
-// // Handle Midtrans webhook callback
-// export async function handleMidtransCallback(req: Request) {
-//   try {
-//     // Parse webhook notification from Midtrans
-//     const body = await req.json();
+    // Verify signature (important for security)
+    // In a real implementation, you'd validate this with the Midtrans signature
 
-//     // Verify signature (important for security)
-//     // In a real implementation, you'd validate this with the Midtrans signature
+    const { 
+      order_id, 
+      transaction_status, 
+      fraud_status, 
+      payment_type,
+      transaction_id,
+      va_numbers,
+      permata_va_number,
+      bill_key,
+      biller_code,
+      payment_code,
+      expiry_time
+    } = body;
 
-//     const { order_id, transaction_status, fraud_status, payment_type } = body;
+    // Extract transaction IDs from your database using order_id
+    // Pertama, cari payment record berdasarkan midtransOrderId
+    const paymentRecord = await db.query.payment.findFirst({
+      where: eq(payment.midtransOrderId, order_id),
+    });
 
-//     // Extract transaction IDs from your database using order_id
-//     // This assumes you've stored the mapping between Midtrans order_id and your transaction IDs
-//     const relatedTransactions = await db.query.transaction.findMany({
-//       where: eq(transaction.id, order_id.replace("ORDER-", "")),
-//     });
+    if (!paymentRecord) {
+      return { success: false, error: "No matching payment record found" };
+    }
 
-//     // If no transactions found, return error
-//     if (relatedTransactions.length === 0) {
-//       return { success: false, error: "No matching transactions found" };
-//     }
+    // Sekarang dapatkan transaksi terkait
+    const relatedTransactions = await db.query.transaction.findMany({
+      where: eq(transaction.id, paymentRecord.transactionId),
+    });
 
-//     let paymentStatus = "pending";
-//     let orderStatus = "processing";
+    // If no transactions found, return error
+    if (relatedTransactions.length === 0) {
+      return { success: false, error: "No matching transactions found" };
+    }
 
-//     // Process based on transaction_status
-//     if (
-//       transaction_status === "capture" ||
-//       transaction_status === "settlement"
-//     ) {
-//       if (fraud_status === "accept") {
-//         paymentStatus = "paid";
-//       }
-//     } else if (
-//       transaction_status === "cancel" ||
-//       transaction_status === "deny" ||
-//       transaction_status === "expire"
-//     ) {
-//       paymentStatus = "failed";
-//       orderStatus = "canceled";
+    // Map the Midtrans status to our schema's payment status
+    // Match transaction_status to values from our schema enum
+    let paymentStatus = "pending";
+    let orderStatus = "processing";
 
-//       // Return items to inventory
-//       for (const tx of relatedTransactions) {
-//         const productData = await db.query.product.findFirst({
-//           where: eq(product.id, tx.productId),
-//         });
+    // Process based on transaction_status
+    if (
+      transaction_status === "capture" ||
+      transaction_status === "settlement"
+    ) {
+      if (fraud_status === "accept") {
+        paymentStatus = "settlement"; // Using the appropriate enum value
+      }
+    } else if (
+      transaction_status === "cancel" ||
+      transaction_status === "deny" ||
+      transaction_status === "expire"
+    ) {
+      paymentStatus = transaction_status; // Using the appropriate enum value
+      orderStatus = "canceled";
 
-//         if (productData) {
-//           await db
-//             .update(product)
-//             .set({
-//               quantity: (productData.quantity || 0) + 1, // Assume 1 quantity per transaction for simplicity
-//               status: "available",
-//               updatedAt: new Date(),
-//             })
-//             .where(eq(product.id, tx.productId));
-//         }
-//       }
-//     }
+      // Return items to inventory
+      for (const tx of relatedTransactions) {
+        const productData = await db.query.product.findFirst({
+          where: eq(product.id, tx.productId),
+        });
 
-//     // Update all related transactions
-//     for (const tx of relatedTransactions) {
-//       // Update transaction status
-//       await db
-//         .update(transaction)
-//         .set({
-//           paymentStatus,
-//           orderStatus,
-//           updatedAt: new Date(),
-//         })
-//         .where(eq(transaction.id, tx.id));
+        if (productData) {
+          await db
+            .update(product)
+            .set({
+              quantity: (productData.quantity || 0) + 1, // Assume 1 quantity per transaction for simplicity
+              status: "available",
+              updatedAt: new Date(),
+            })
+            .where(eq(product.id, tx.productId));
+        }
+      }
+    }
 
-//       // Update payment records
-//       const paymentRecords = await db.query.payment.findMany({
-//         where: eq(payment.transactionId, tx.id),
-//       });
+    // Update payment details (penting: simpan informasi detail pembayaran)
+    let bankNameValue = paymentRecord.bankName;
+    let vaNumberValue = paymentRecord.vaNumber;
+    let billKeyValue = paymentRecord.billKey;
+    let billerCodeValue = paymentRecord.billerCode;
+    let paymentCodeValue = paymentRecord.paymentCode;
 
-//       for (const paymentRecord of paymentRecords) {
-//         await db
-//           .update(payment)
-//           .set({
-//             paymentStatus:
-//               paymentStatus === "paid" ? "completed" : paymentStatus,
-//             paymentDate: new Date(),
-//             updatedAt: new Date(),
-//           })
-//           .where(eq(payment.id, paymentRecord.id));
-//       }
+    // Update jika ada informasi baru dari callback
+    if (va_numbers && va_numbers.length > 0) {
+      bankNameValue = va_numbers[0].bank;
+      vaNumberValue = va_numbers[0].va_number;
+    } else if (permata_va_number) {
+      bankNameValue = "permata";
+      vaNumberValue = permata_va_number;
+    }
 
-//       // Create notifications
-//       // For buyer
-//       await db.insert(notification).values({
-//         id: nanoid(),
-//         userId: tx.buyerId,
-//         title:
-//           paymentStatus === "paid" ? "Payment Successful" : "Payment Failed",
-//         message:
-//           paymentStatus === "paid"
-//             ? `Your payment for order has been confirmed.`
-//             : `Your payment for order has failed. Please try again.`,
-//         type: "transaction",
-//         linkTo: `/orders/${tx.id}`,
-//         createdAt: new Date(),
-//       });
+    if (bill_key) {
+      billKeyValue = bill_key;
+    }
 
-//       // For seller
-//       await db.insert(notification).values({
-//         id: nanoid(),
-//         userId: tx.sellerId,
-//         title: paymentStatus === "paid" ? "Payment Received" : "Payment Failed",
-//         message:
-//           paymentStatus === "paid"
-//             ? `Payment for order has been confirmed.`
-//             : `Payment for order has failed.`,
-//         type: "transaction",
-//         linkTo: `/seller/orders/${tx.id}`,
-//         createdAt: new Date(),
-//       });
-//     }
+    if (biller_code) {
+      billerCodeValue = biller_code;
+    }
 
-//     // Success response
-//     return { success: true, status: paymentStatus };
-//   } catch (error) {
-//     console.error("Error processing Midtrans callback:", error);
-//     return {
-//       success: false,
-//       error:
-//         error instanceof Error
-//           ? error.message
-//           : "Failed to process payment callback",
-//     };
-//   }
-// }
+    if (payment_code) {
+      paymentCodeValue = payment_code;
+    }
 
-// // Get transactions for current user
-// export async function getUserTransactions(status?: string) {
-//   try {
-//     const session = await auth.api.getSession({
-//       headers: await headers(),
-//     });
+    // Update all related transactions
+    for (const tx of relatedTransactions) {
+      // Update transaction status
+      await db
+        .update(transaction)
+        .set({
+          paymentStatus: paymentStatus as any, // Cast to match schema enum
+          orderStatus: orderStatus as any, // Cast to match schema enum
+          updatedAt: new Date(),
+        })
+        .where(eq(transaction.id, tx.id));
 
-//     if (!session?.user) {
-//       throw new Error("You must be logged in to view your transactions");
-//     }
+      // Update payment records with more details
+      await db
+        .update(payment)
+        .set({
+          paymentStatus: paymentStatus as any, // Cast to match schema enum
+          paymentDate: new Date(),
+          bankName: bankNameValue,
+          vaNumber: vaNumberValue,
+          billKey: billKeyValue,
+          billerCode: billerCodeValue,
+          paymentCode: paymentCodeValue,
+          midtransTransactionId: transaction_id || paymentRecord.midtransTransactionId,
+          updatedAt: new Date(),
+        })
+        .where(eq(payment.id, paymentRecord.id));
 
-//     const userId = session.user.id;
+      // Create notifications
+      // For buyer
+      await db.insert(notification).values({
+        id: nanoid(),
+        userId: tx.buyerId,
+        title:
+          paymentStatus === "settlement" ? "Payment Successful" : "Payment Failed",
+        message:
+          paymentStatus === "settlement"
+            ? `Your payment for order has been confirmed.`
+            : `Your payment for order has failed. Please try again.`,
+        type: "transaction",
+        linkTo: `/orders/${tx.id}`,
+        createdAt: new Date(),
+      });
 
-//     // Query builder for transactions
-//     let query = db.query.transaction.findMany({
-//       where: eq(transaction.buyerId, userId),
-//       with: {
-//         product: {
-//           with: {
-//             images: {
-//               where: eq(product.id, transaction.productId),
-//               limit: 1,
-//             },
-//           },
-//         },
-//         seller: true,
-//         payment: true,
-//         shipping: true,
-//       },
-//       orderBy: (transaction, { desc }) => [desc(transaction.createdAt)],
-//     });
+      // For seller
+      await db.insert(notification).values({
+        id: nanoid(),
+        userId: tx.sellerId,
+        title: paymentStatus === "settlement" ? "Payment Received" : "Payment Failed",
+        message:
+          paymentStatus === "settlement"
+            ? `Payment for order has been confirmed.`
+            : `Payment for order has failed.`,
+        type: "transaction",
+        linkTo: `/seller/orders/${tx.id}`,
+        createdAt: new Date(),
+      });
+    }
 
-//     // Apply status filter if provided
-//     if (status) {
-//       query = db.query.transaction.findMany({
-//         where: (transaction, { eq, and }) =>
-//           and(
-//             eq(transaction.buyerId, userId),
-//             eq(transaction.orderStatus, status)
-//           ),
-//         with: {
-//           product: {
-//             with: {
-//               images: {
-//                 where: eq(product.id, transaction.productId),
-//                 limit: 1,
-//               },
-//             },
-//           },
-//           seller: true,
-//           payment: true,
-//           shipping: true,
-//         },
-//         orderBy: (transaction, { desc }) => [desc(transaction.createdAt)],
-//       });
-//     }
+    // Success response
+    return { success: true, status: paymentStatus };
+  } catch (error) {
+    console.error("Error processing Midtrans callback:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to process payment callback",
+    };
+  }
+}
+// Fungsi untuk mendapatkan detail pembayaran berdasarkan ID transaksi
+export async function getPaymentDetails(transactionId: string) {
+  try {
+    const paymentDetails = await db.query.payment.findFirst({
+      where: eq(payment.transactionId, transactionId),
+    });
 
-//     const transactions = await query;
+    if (!paymentDetails) {
+      return {
+        success: false,
+        error: "Payment details not found",
+      };
+    }
 
-//     return {
-//       success: true,
-//       transactions,
-//     };
-//   } catch (error) {
-//     console.error("Error getting user transactions:", error);
-//     return {
-//       success: false,
-//       transactions: [],
-//       error:
-//         error instanceof Error ? error.message : "Failed to get transactions",
-//     };
-//   }
-// }
+    return {
+      success: true,
+      data: {
+        ...paymentDetails,
+        paymentInstructions: paymentDetails.paymentInstructions
+          ? JSON.parse(paymentDetails.paymentInstructions)
+          : {},
+      },
+    };
+  } catch (error) {
+    console.error("Error getting payment details:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to get payment details",
+    };
+  }
+}
 
-// // Get seller orders (transactions where user is seller)
-// export async function getSellerOrders(status?: string) {
-//   try {
-//     const session = await auth.api.getSession({
-//       headers: await headers(),
-//     });
+// Get transactions for current user
+export async function getUserTransactions(status?: string) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
 
-//     if (!session?.user) {
-//       throw new Error("You must be logged in to view seller orders");
-//     }
+    if (!session?.user) {
+      throw new Error("You must be logged in to view your transactions");
+    }
 
-//     const sellerId = session.user.id;
+    const userId = session.user.id;
 
-//     // Query builder for seller orders
-//     let query = db.query.transaction.findMany({
-//       where: eq(transaction.sellerId, sellerId),
-//       with: {
-//         product: {
-//           with: {
-//             images: {
-//               where: eq(product.id, transaction.productId),
-//               limit: 1,
-//             },
-//           },
-//         },
-//         buyer: true,
-//         payment: true,
-//         shipping: true,
-//       },
-//       orderBy: (transaction, { desc }) => [desc(transaction.createdAt)],
-//     });
+    // Query builder for transactions
+    let query = db.query.transaction.findMany({
+      where: eq(transaction.buyerId, userId),
+      with: {
+        product: {
+          with: {
+            images: true,
+          },
+        },
+        seller: true,
+        payment: true,
+        shipping: true,
+      },
+      orderBy: (transaction, { desc }) => [desc(transaction.createdAt)],
+    });
 
-//     // Apply status filter if provided
-//     if (status) {
-//       query = db.query.transaction.findMany({
-//         where: (transaction, { eq, and }) =>
-//           and(
-//             eq(transaction.sellerId, sellerId),
-//             eq(transaction.orderStatus, status)
-//           ),
-//         with: {
-//           product: {
-//             with: {
-//               images: {
-//                 where: eq(product.id, transaction.productId),
-//                 limit: 1,
-//               },
-//             },
-//           },
-//           buyer: true,
-//           payment: true,
-//           shipping: true,
-//         },
-//         orderBy: (transaction, { desc }) => [desc(transaction.createdAt)],
-//       });
-//     }
+    // Apply status filter if provided
+    if (status) {
+      query = db.query.transaction.findMany({
+        where: (transaction, { eq, and }) =>
+          and(
+            eq(transaction.buyerId, userId),
+            eq(transaction.orderStatus, status as any) // Cast to match schema enum
+          ),
+        with: {
+          product: {
+            with: {
+              images: true,
+            },
+          },
+          seller: true,
+          payment: true,
+          shipping: true,
+        },
+        orderBy: (transaction, { desc }) => [desc(transaction.createdAt)],
+      });
+    }
 
-//     const orders = await query;
+    const transactions = await query;
 
-//     return {
-//       success: true,
-//       orders,
-//     };
-//   } catch (error) {
-//     console.error("Error getting seller orders:", error);
-//     return {
-//       success: false,
-//       orders: [],
-//       error:
-//         error instanceof Error ? error.message : "Failed to get seller orders",
-//     };
-//   }
-// }
+    return {
+      success: true,
+      transactions,
+    };
+  } catch (error) {
+    console.error("Error getting user transactions:", error);
+    return {
+      success: false,
+      transactions: [],
+      error:
+        error instanceof Error ? error.message : "Failed to get transactions",
+    };
+  }
+}
+
+// Get seller orders (transactions where user is seller)
+export async function getSellerOrders(status?: string) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user) {
+      throw new Error("You must be logged in to view seller orders");
+    }
+
+    const sellerId = session.user.id;
+
+    // Query builder for seller orders
+    let query = db.query.transaction.findMany({
+      where: eq(transaction.sellerId, sellerId),
+      with: {
+        product: {
+          with: {
+            images: true,
+          },
+        },
+        buyer: true,
+        payment: true,
+        shipping: true,
+      },
+      orderBy: (transaction, { desc }) => [desc(transaction.createdAt)],
+    });
+
+    // Apply status filter if provided
+    if (status) {
+      query = db.query.transaction.findMany({
+        where: (transaction, { eq, and }) =>
+          and(
+            eq(transaction.sellerId, sellerId),
+            eq(transaction.orderStatus, status as any) // Cast to match schema enum
+          ),
+        with: {
+          product: {
+            with: {
+              images: true,
+            },
+          },
+          buyer: true,
+          payment: true,
+          shipping: true,
+        },
+        orderBy: (transaction, { desc }) => [desc(transaction.createdAt)],
+      });
+    }
+
+    const orders = await query;
+
+    return {
+      success: true,
+      orders,
+    };
+  } catch (error) {
+    console.error("Error getting seller orders:", error);
+    return {
+      success: false,
+      orders: [],
+      error:
+        error instanceof Error ? error.message : "Failed to get seller orders",
+    };
+  }
+}

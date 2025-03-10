@@ -8,6 +8,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import NextTopLoader from "nextjs-toploader";
 import "./globals.css";
+import { getUserNotifications } from "@/lib/actions/notification";
+import { Notification } from "@/components/notif-ex";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,6 +46,7 @@ export default async function RootLayout({
     cartTotal: cartItems?.cartTotal ?? 0, // Ensure cartTotal is not null
   };
 
+  const notif = await getUserNotifications();
   return (
     <html lang="en">
       <body
@@ -76,7 +79,7 @@ export default async function RootLayout({
           />
           <Toaster />
           {/* <Header cartCount={cartCount} cartData={cartData} /> */}
-          <Navbar cartCount={cartCount} cartData={cartData} />
+          <Navbar cartCount={cartCount} cartData={cartData} notifications={notif.notifications as unknown as Notification[]} />
           <div className="">{children}</div>
         </ThemeProvider>
       </body>

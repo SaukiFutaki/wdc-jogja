@@ -166,7 +166,7 @@ export async function getCartItems() {
       headers: await headers(),
     });
 
-    if (!session?.user) {
+    if (!session?.session) {
       throw new Error("You must be logged in to view your cart");
     }
 

@@ -67,10 +67,11 @@ export const verification = sqliteTable("verification", {
   updatedAt: integer("updated_at", { mode: "timestamp" }),
 });
 
-
 export const product = sqliteTable("product", {
   id: text("id").primaryKey(),
-  sellerId: text("seller_id").notNull().references(() => user.id),
+  sellerId: text("seller_id")
+    .notNull()
+    .references(() => user.id),
   name: text("name").notNull(),
   description: text("description"),
   price: real("price"),
@@ -78,7 +79,9 @@ export const product = sqliteTable("product", {
   quantity: integer("quantity").default(1),
   discount: real("discount").default(0),
   condition: text("condition", { enum: ["new", "used", "rework"] }).notNull(),
-  status: text("status", { enum: ["available", "sold", "barter"] }).default("available"),
+  status: text("status", { enum: ["available", "sold", "barter"] }).default(
+    "available"
+  ),
   primaryImageUrl: text("primary_image_url"), // Jika ingin menyimpan URL gambar utama
   sustainabilityRating: integer("sustainability_rating"),
   // jual atau barter
@@ -133,7 +136,17 @@ export const transaction = sqliteTable("transaction", {
     .references(() => product.id),
   totalPrice: real("total_price").notNull(),
   paymentStatus: text("payment_status", {
-    enum: ["pending", "paid", "failed"],
+    enum: [
+      "pending",
+      "settlement",
+      "capture",
+      "deny",
+      "cancel",
+      "expire",
+      "refund",
+      "partial_refund",
+      "authorize",
+    ],
   }).default("pending"),
   orderStatus: text("order_status", {
     enum: ["processing", "shipped", "delivered", "canceled"],
@@ -152,9 +165,29 @@ export const payment = sqliteTable("payment", {
     enum: ["credit_card", "bank_transfer", "e_wallet", "cod"],
   }).notNull(),
   paymentStatus: text("payment_status", {
-    enum: ["pending", "completed", "failed"],
+    enum: [
+      "pending",
+      "settlement",
+      "capture",
+      "deny",
+      "cancel",
+      "expire",
+      "refund",
+      "partial_refund",
+      "authorize",
+    ],
   }).default("pending"),
   paymentDate: integer("payment_date", { mode: "timestamp" }),
+  // Tambahan field untuk menyimpan detail metode pembayaran
+  bankName: text("bank_name"), // Nama bank (BCA, Mandiri, dll)
+  vaNumber: text("va_number"), // Nomor Virtual Account
+  billKey: text("bill_key"), // Untuk metode pembayaran tertentu seperti Mandiri Bill
+  billerCode: text("biller_code"), // Untuk metode pembayaran tertentu
+  paymentCode: text("payment_code"), // Untuk retail outlets seperti Alfamart/Indomaret
+  paymentInstructions: text("payment_instructions"), // Instruksi pembayaran dalam JSON
+  expiryTime: integer("expiry_time", { mode: "timestamp" }), // Waktu kadaluarsa pembayaran
+  midtransOrderId: text("midtrans_order_id"), // Order ID dari Midtrans
+  midtransTransactionId: text("midtrans_transaction_id"), // Transaction ID dari Midtrans
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });

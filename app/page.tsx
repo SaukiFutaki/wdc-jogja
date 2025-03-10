@@ -4,10 +4,12 @@ import HeroCarousel from "@/components/hero";
 import ProductSection from "@/components/products/product-section";
 import { MarqueeDemo } from "@/components/testimonial";
 import { Separator } from "@/components/ui/separator";
+import { getUserNotifications } from "@/lib/actions/notification";
 import { getAllProducts, getAllProductsBarter } from "@/lib/actions/product";
-
 export default async function Home() {
   const allDataProduct = await getAllProducts();
+  const notif = await getUserNotifications();
+  console.log("notif", notif);
   const mappedData =
     allDataProduct.data?.map((item) => ({
       ...item,
@@ -43,6 +45,7 @@ export default async function Home() {
   return (
     <div>
       <div className="">
+        {/* <NotificationExample notifications={notif.notifications as unknown as Notification[]} /> */}
         <HeroCarousel />
       </div>
       <ProductSection data={mappedData} />
