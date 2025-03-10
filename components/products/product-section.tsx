@@ -60,7 +60,7 @@ export default function ProductSection({ data }: { data: DataProps[] }) {
 
         {/* View All Button */}
         <div className="flex justify-center mt-12">
-          <Link href="/shop">
+          <Link href="/">
             <button className="px-8 py-2 border border-gray-300 rounded-full hover:bg-gray-100 transition">
               Lihat Semua
             </button>

@@ -81,7 +81,7 @@ export default function RichNavigationMenu({
     <div className={cn("flex justify-center w-full", className)}>
       <NavigationMenu className="z-20">
         <NavigationMenuList>
-          <NavigationMenuItem>
+          {/* <NavigationMenuItem>
             <NavigationMenuTrigger
               className="  !bg-transparent hover:!bg-transparent text-white hover:text-gray-300 !border-0 !shadow-none !rounded-none font-medium px-4 py-2"
               style={{ boxShadow: "none" }}
@@ -127,8 +127,8 @@ export default function RichNavigationMenu({
                 </div>
               </div>
             </NavigationMenuContent>
-          </NavigationMenuItem>
-          <NavigationMenuItem>
+          </NavigationMenuItem> */}
+          {/* <NavigationMenuItem>
             <NavigationMenuTrigger
               className="!bg-transparent hover:!bg-transparent text-white hover:text-gray-300 !border-0 !shadow-none !rounded-none font-medium px-4 py-2"
               style={{ boxShadow: "none" }}
@@ -154,7 +154,7 @@ export default function RichNavigationMenu({
                 </ul>
               </div>
             </NavigationMenuContent>
-          </NavigationMenuItem>
+          </NavigationMenuItem> */}
           <NavigationMenuItem>
             <Link href="/rework" legacyBehavior passHref>
               <NavigationMenuLink   className="!bg-transparent hover:!bg-transparent text-white hover:text-gray-300 !border-0 !shadow-none !rounded-none font-medium px-4 py-2"
@@ -168,6 +168,14 @@ export default function RichNavigationMenu({
               <NavigationMenuLink   className="!bg-transparent hover:!bg-transparent text-white hover:text-gray-300 !border-0 !shadow-none !rounded-none font-medium px-4 py-2"
                 style={{ boxShadow: 'none' }}>
                 Barter
+              </NavigationMenuLink>
+            </Link>
+          </NavigationMenuItem>
+          <NavigationMenuItem>
+            <Link href="/edu" legacyBehavior passHref>
+              <NavigationMenuLink   className="!bg-transparent hover:!bg-transparent text-white hover:text-gray-300 !border-0 !shadow-none !rounded-none font-medium px-4 py-2"
+                style={{ boxShadow: 'none' }}>
+                  Edu
               </NavigationMenuLink>
             </Link>
           </NavigationMenuItem>
