@@ -149,21 +149,20 @@ const Footer = () => {
                   <Link href='/'>Home</Link>
                 </li>
                 <li className='text-xl font-medium'>
-                  <Link href='/about'>About us</Link>
+                  <Link href='/rework'>Rework</Link>
                 </li>
                 <li className='text-xl font-medium'>
-                  <Link href='/services'>Our Services</Link>
+                  <Link href='/barter'>
+                    Barter
+                  </Link>
                 </li>
 
                 <li className='text-xl font-medium'>
-                  <Link href='/projects'>Projects</Link>
+                  <Link href='/edu'>
+                    Edu
+                  </Link>
                 </li>
-                <li className='text-xl font-medium'>
-                  <Link href='/blogs'>Blogs</Link>
-                </li>
-                <li className='text-xl font-medium'>
-                  <Link href='/contact-us'>Contact</Link>
-                </li>
+              
               </ul>
               <ul>
                 <li className='text-2xl pb-2 text-black font-semibold'>
